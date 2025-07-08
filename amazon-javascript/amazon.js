@@ -1,3 +1,6 @@
+import * as cartObj from "../data/cart.js";
+import { products } from "../data/products.js";
+import { convertCentsToDollars } from "./utils/currencyConversion.js";
 let productsHTML = "";
 // Generate HTML for each product
 products.forEach((product) => {
@@ -22,12 +25,12 @@ products.forEach((product) => {
             <div class="product-rating-count link-primary">87</div>
           </div>
 
-          <div class="product-price">$${(product.priceCents / 100).toFixed(
-            2
+          <div class="product-price">$${convertCentsToDollars(
+            product.priceCents
           )}</div>
 
           <div class="product-quantity-container">
-            <select>
+            <select class="js-quantity-selector-${product.id}">
               <option selected value="1">1</option>
               <option value="2">2</option>
               <option value="3">3</option>
@@ -55,31 +58,35 @@ products.forEach((product) => {
   `;
 });
 
+function addedToCart(button) {
+  const productContainer = button.closest(".product-container");
+  const addedToCartDiv = productContainer.querySelector(".added-to-cart");
+  if (addedToCartDiv.hideTimeoutId) {
+    clearTimeout(addedToCartDiv.hideTimeoutId);
+  }
+  if (addedToCartDiv.showTimeoutId) {
+    clearTimeout(addedToCartDiv.showTimeoutId);
+  }
+  addedToCartDiv.showTimeoutId = setTimeout(() => {
+    addedToCartDiv.classList.add("show");
+    addedToCartDiv.hideTimeoutId = setTimeout(() => {
+      addedToCartDiv.classList.remove("show");
+    }, 2000);
+  }, 500);
+}
+function updateCartQuantity() {
+  let cartQuantity = 0;
+  cartObj.cart.forEach((item) => {
+    cartQuantity += item.quantity;
+  });
+  return cartQuantity;
+}
 document.querySelector(".js-products-grid").innerHTML = productsHTML;
 document.querySelectorAll(".js-add-to-cart").forEach((button) => {
   button.addEventListener("click", () => {
-    let cartObject;
-    const productName = button.dataset.productId;
-    cart.forEach((item) => {
-      if (productName === item.product.id) {
-        cartObject = item;
-        return;
-      }
-    });
-    if (cartObject) {
-      cartObject.quantity++;
-    } else {
-      const product = products.find((p) => p.id === productName);
-      console.log(product);
-      cart.push({
-        product,
-        quantity: 1,
-      });
-    }
-    let cartQuantity = 0;
-    cart.forEach((item) => {
-      cartQuantity += item.quantity;
-    });
+    addedToCart(button);
+    cartObj.addToCart(button);
+    let cartQuantity = updateCartQuantity();
     document.querySelector(".js-cart-quantity").textContent = cartQuantity;
   });
 });
